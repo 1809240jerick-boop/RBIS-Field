@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="manifest.json">
+
+<link rel="apple-touch-icon" href="icon.png">
+
+<meta name="theme-color" content="#0a3d62">
+<meta name="application-name" content="RBI System">
+
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js');
+    });
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>RBI System | SEC JERICK</title>
+
+<meta name="theme-color" content="#0a3d62">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="application-name" content="RBI System">
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<style>
+/* HARD RESET & MOBILE STYLES */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #eef1f5; -webkit-tap-highlight-color: transparent; }
+
+/* SECURITY OVERLAY */
+#login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0a3d62; z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; color: white; }
+.login-box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); width: 85%; max-width: 350px; color: #333; text-align: center; }
+
+/* VIEWER MODAL */
+#viewer-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: flex-end; }
+.viewer-card { background: #fff; width: 100%; max-width: 500px; height: 90vh; border-radius: 20px 20px 0 0; padding: 20px; overflow-y: auto; position: relative; animation: slideUp 0.3s ease-out; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.app {
+  max-width: 450px; 
+  margin: 0 auto;
+  background: #ffffff;
+  min-height: 100vh;
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+header {
+  background: #0a3d62;
+  color: #ffffff;
+  padding: 16px;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* TABS STYLING */
+.tab-container {
+    display: flex;
+    background: #0a3d62;
+    padding-bottom: 10px;
+}
+.tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.6);
+    padding: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+}
+.tab-btn.active {
+    color: white;
+    border-bottom: 3px solid #1e90ff;
+}
+
+h3 { margin: 0; font-size: 18px; }
+small { opacity: 0.8; font-size: 12px; }
+
+.section { padding: 16px; border-bottom: 8px solid #f0f2f5; }
+
+.form-group { width: 100%; margin-bottom: 14px; }
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 6px;
+}
+.req { color: red; margin-left: 3px; } /* Asterisk for required */
+
+input, select {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  font-size: 15px;
+  background: #fff;
+}
+
+input:focus, select:focus { border-color: #0a3d62; outline: none; }
+
+button {
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 8px;
+  background: #1e90ff;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+button:active { transform: scale(0.98); }
+
+/* Button Colors */
+button.secondary { background: #27ae60; } /* Excel Green */
+button.close-btn { background: #e74c3c; margin-bottom: 20px; } 
+
+/* SCROLLABLE LIST - Showing approx 4 records */
+.list { margin-top: 10px; max-height: 280px; overflow-y: auto; border: 1px solid #f0f0f0; border-radius: 8px; }
+
+.card {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+.card:active { background: #f9f9f9; }
+.card span { font-weight: 500; }
+.card small { color: #888; }
+
+.detail-row { border-bottom: 1px solid #eee; padding: 10px 0; }
+.detail-label { font-size: 11px; color: #888; text-transform: uppercase; display: block; }
+.detail-val { font-size: 14px; font-weight: 600; color: #333; }
+
+footer {
+  text-align: center;
+  font-size: 12px;
+  padding: 20px;
+  color: #666;
+  background: #f8f9fa;
+}
+
+/* Utility to hide/show tabs */
+.hidden-tab { display: none; }
+</style>
+</head>
+<body>
+
+<div id="login-overlay">
+    <div class="login-box">
+        <h4 style="margin-top:0; color:#0a3d62;">SECURITY CHECK</h4>
+        <p style="font-size:12px; color:#666; margin-bottom:15px;" id="login-msg">Enter Your Password</p>
+        <input type="password" id="login-pass" style="text-align:center; margin-bottom:10px;" placeholder="Password">
+        <button onclick="attemptLogin()">LOGIN</button>
+        <div style="margin-top:10px; font-size:11px; cursor:pointer; color:#1e90ff;" onclick="forgotPassword()">Forgot Password?</div>
+    </div>
+</div>
+
+<div class="app">
+<header>
+  <h3>RBI System</h3>
+  <small>Barangay Inhabitant Registration</small>
+</header>
+
+<div class="tab-container">
+    <button class="tab-btn active" onclick="switchTab('reg')" id="btn-reg">REGISTRATION</button>
+    <button class="tab-btn" onclick="switchTab('rec')" id="btn-rec">RECORDS LIST</button>
+</div>
+
+<div id="tab-registration">
+    <div class="section">
+      <div class="form-group"><label>Inhabitant Type<span class="req">*</span></label><select id="inhabitantType"><option>NON-MIGRANT</option><option>MIGRANT</option><option>TRANSIENT</option></select></div>
+      
+      <div class="form-group"><label>Last Name<span class="req">*</span></label><input id="lastName" placeholder="e.g. Dela Cruz"></div>
+      <div class="form-group"><label>First Name<span class="req">*</span></label><input id="firstName" placeholder="e.g. Juan"></div>
+      <div class="form-group"><label>Middle Name<span class="req">*</span></label><input id="middleName"></div>
+      <div class="form-group"><label>Suffix</label><input id="suffix" placeholder="e.g. Jr, III (Optional)"></div>
+      <div class="form-group"><label>Birth Place<span class="req">*</span></label><input id="birthPlace"></div>
+      <div class="form-group"><label>Birthday<span class="req">*</span></label><input type="date" id="birthDate"></div>
+      <div class="form-group"><label>Sex<span class="req">*</span></label><select id="sex"><option>MALE</option><option>FEMALE</option></select></div>
+      <div class="form-group"><label>Civil Status<span class="req">*</span></label><select id="civilStatus"><option>SINGLE</option><option>MARRIED</option><option>WIDOWED</option><option>SEPARATED</option><option>COMMON LAW/ LIVE-IN</option></select></div>
+      <div class="form-group"><label>Citizenship<span class="req">*</span></label><input id="citizenship" value="FILIPINO"></div>
+      <div class="form-group"><label>Profession / Occupation</label><input id="profession"></div>
+      
+      <div class="form-group"><label>Contact Number (Optional)</label><input id="contact" type="tel"></div>
+      <div class="form-group"><label>Email Address (Optional)</label><input id="email" type="email"></div>
+      
+      <div class="form-group"><label>Educational Attainment<span class="req">*</span></label>
+          <select id="education">
+              <option>NONE</option>
+              <option>ELEMENTARY LEVEL</option>
+              <option>ELEMENTARY GRADUATE</option>
+              <option>HIGH SCHOOL LEVEL</option>
+              <option>HIGH SCHOOL GRADUATE</option>
+              <option>SENIOR HIGH SCHOOL LEVEL</option>
+              <option>SENIOR HIGH SCHOOL GRADUATE</option>
+              <option>COLLEGE LEVEL</option>
+              <option>COLLEGE GRADUATE</option>
+              <option>VOCATIONAL</option>
+              <option>POST GRADUATE</option>
+          </select>
+      </div>
+      
+      <div style="margin-top:15px; border-top:1px dashed #ccc; padding-top:10px;">
+          <label style="color:#0a3d62;">Mother's Maiden Name<span class="req">*</span></label>
+          
+          <div class="form-group" style="background:#f0f8ff; padding:10px; border-radius:8px; border:1px solid #bde0ff;">
+             <label style="color:#1e90ff; margin-bottom:4px; font-size:11px;">AUTO-FILL FROM RECORDED MOTHERS</label>
+             <input id="motherSearch" list="motherList" onchange="autoFillMother(this)" placeholder="Search Mother's Name..." style="border:1px solid #1e90ff;">
+             <datalist id="motherList"></datalist>
+          </div>
+
+          <div class="form-group"><input id="mFirst" placeholder="Mother's First Name"></div>
+          <div class="form-group"><input id="mMiddle" placeholder="Mother's Middle Name"></div>
+          <div class="form-group"><input id="mLast" placeholder="Mother's Last Name"></div>
+      </div>
+
+      <button onclick="saveRecord()">SAVE RECORD</button>
+    </div>
+</div>
+
+<div id="tab-records" class="hidden-tab">
+    <div class="section">
+      <div class="form-group">
+          <label>Search Records (Last or First Name)</label>
+          <input id="searchBox" oninput="renderList()" placeholder="Type Name to search...">
+      </div>
+      <div class="list" id="resultList"></div>
+    </div>
+
+    <div class="section">
+      <label>Export Data</label>
+      <p style="font-size:12px; color:#666; margin-bottom:10px;">
+          Downloads BIMS compatible file (Sheet 1: Instructions, Sheet 2: Data).
+      </p>
+      <button class="secondary" onclick="exportExcel()">Export Excel File</button>
+    </div>
+</div>
+
+<footer>© SEC JERICK™ | Modern RBI System (For Field Use)</footer>
+</div>
+
+<div id="viewer-overlay" onclick="if(event.target===this) closeViewer()">
+    <div class="viewer-card">
+        <h3 style="color:#0a3d62; border-bottom:2px solid #1e90ff; padding-bottom:10px; margin-bottom:15px;">Record Details</h3>
+        <div id="viewer-content"></div>
+        <button class="close-btn" onclick="closeViewer()">Close Viewer</button>
+    </div>
+</div>
+
+<script>
+// --- CONFIGURATION ---
+const HEADERS = [
+    "INHABITANT TYPE", "LAST NAME", "FIRST NAME", "MIDDLE NAME", "SUFFIX", 
+    "BIRTH PLACE", "BIRTHDATE (YYYY-MM-DD)", "SEX", "CIVIL STATUS", "CITIZENSHIP", 
+    "PROFESSION/ OCCUPATION", "CONTACT NUMBER", "EMAIL ADDRESS", 
+    "HIGHEST EDUCATIONAL ATTAINMENT", "MOTHER'S FIRST NAME", 
+    "MOTHER'S MIDDLE NAME", "MOTHER'S LAST NAME"
+];
+
+let records = JSON.parse(localStorage.getItem('rbiRecords')) || [];
+let settings = JSON.parse(localStorage.getItem('rbi_settings')) || { custom_password: '' };
+
+// --- SECURITY LOGIC ---
+function getDynamicPassword() {
+    const now = new Date();
+    const m = now.getMonth();
+    const d = now.getDate();
+    const y = now.getFullYear();
+    // Week calc:
+    const onejan = new Date(y, 0, 1);
+    const w = Math.ceil((((now - onejan) / 86400000) + onejan.getDay() + 1) / 7);
+    return `RBI-${m}${d}${y}${w*2}`;
+}
+
+window.onload = function() {
+    if(!settings.custom_password) {
+        document.getElementById('login-msg').innerText = "Create Your Password to Start";
+    }
+    updateMotherDatalist(); // Init Auto-fill list for MOTHERS
+}
+
+function attemptLogin() {
+    const input = document.getElementById('login-pass').value;
+    
+    // 1. Initial Setup Flow
+    if (!settings.custom_password) {
+        if(input.trim().length > 0) {
+            settings.custom_password = input.trim();
+            localStorage.setItem('rbi_settings', JSON.stringify(settings));
+            alert("Password Set! You are now logged in.");
+            document.getElementById('login-overlay').style.display = 'none';
+        } else {
+            alert("Please create a password.");
+        }
+        return;
+    }
+
+    // 2. Normal Login Flow (Only accepts custom password)
+    if (input === settings.custom_password) {
+        document.getElementById('login-overlay').style.display = 'none';
+    } else {
+        alert("Incorrect Password.");
+    }
+}
+
+function forgotPassword() {
+    alert("Please contact SEC JERICK for the Admin Password.");
+    const input = prompt("Enter Dynamic Admin Password:");
+    
+    if(input === getDynamicPassword()) {
+        const newPass = prompt("Admin Code Correct. Enter your NEW Password:");
+        if(newPass && newPass.trim().length > 0) { 
+            settings.custom_password = newPass.trim(); 
+            localStorage.setItem('rbi_settings', JSON.stringify(settings)); 
+            alert("Password Reset Successfully."); 
+        }
+    } else {
+        if(input) alert("Invalid Dynamic Code.");
+    }
+}
+
+// --- TAB FUNCTIONALITY ---
+function switchTab(tab) {
+    const regTab = document.getElementById('tab-registration');
+    const recTab = document.getElementById('tab-records');
+    const btnReg = document.getElementById('btn-reg');
+    const btnRec = document.getElementById('btn-rec');
+
+    if(tab === 'reg') {
+        regTab.style.display = 'block';
+        recTab.style.display = 'none';
+        btnReg.classList.add('active');
+        btnRec.classList.remove('active');
+    } else {
+        regTab.style.display = 'none';
+        recTab.style.display = 'block';
+        btnReg.classList.remove('active');
+        btnRec.classList.add('active');
+        renderList(); // Refresh list when tab opens
+    }
+}
+
+// --- CORE FUNCTIONS ---
+function saveRecord(){
+  // 1. Strict Validation
+  const idsToCheck = ['lastName', 'firstName', 'middleName', 'birthPlace', 'birthDate', 'citizenship', 'mFirst', 'mMiddle', 'mLast'];
+  
+  for(let id of idsToCheck) {
+      if(!document.getElementById(id).value.trim()) {
+          // Format ID for alert display
+          let fieldName = id.replace(/([A-Z])/g, ' $1').trim();
+          if(id === 'mFirst') fieldName = "Mother's First Name";
+          if(id === 'mMiddle') fieldName = "Mother's Middle Name";
+          if(id === 'mLast') fieldName = "Mother's Last Name";
+          
+          alert("Field Required: " + fieldName);
+          return;
+      }
+  }
+  
+  const newRow = [
+    inhabitantType.value,
+    lastName.value.toUpperCase(),
+    firstName.value.toUpperCase(),
+    middleName.value.toUpperCase(),
+    suffix.value.toUpperCase(), 
+    birthPlace.value.toUpperCase(),
+    birthDate.value,
+    sex.value,
+    civilStatus.value,
+    citizenship.value.toUpperCase(),
+    profession.value.toUpperCase(), 
+    contact.value, // Optional
+    email.value,   // Optional
+    education.value,
+    mFirst.value.toUpperCase(),
+    mMiddle.value.toUpperCase(),
+    mLast.value.toUpperCase()
+  ];
+
+  records.push(newRow);
+  localStorage.setItem('rbiRecords', JSON.stringify(records));
+  
+  alert('Record Saved!');
+  
+  // Update the mother auto-fill list with the new entry
+  updateMotherDatalist();
+
+  // 2. Clear fields but KEEP Inhabitant Type
+  const currentType = inhabitantType.value;
+  
+  // Clear inputs
+  const inputs = document.querySelectorAll('input');
+  inputs.forEach(input => input.value = '');
+  
+  // Restore Type & Defaults
+  inhabitantType.value = currentType;
+  citizenship.value = "FILIPINO"; 
+  
+  renderList();
+  
+  // 3. Set Focus back to Inhabitant Type
+  inhabitantType.focus();
+}
+
+function renderList(){
+  const q = searchBox.value.toLowerCase();
+  resultList.innerHTML = '';
+  
+  // UPDATED SEARCH: Checks Last Name (index 1) OR First Name (index 2)
+  const filtered = records.map((r, i) => ({data: r, index: i}))
+                          .filter(item => item.data[1].toLowerCase().includes(q) || item.data[2].toLowerCase().includes(q));
+  
+  if(filtered.length === 0 && q.length > 0) {
+      resultList.innerHTML = '<div style="text-align:center; padding:10px; color:#999;">No records found</div>';
+      return;
+  }
+
+  filtered.forEach((item) => {
+    const r = item.data;
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.onclick = () => viewRecord(item.index); 
+    div.innerHTML = `
+        <span>${r[1]}, ${r[2]} <small>(${r[6]})</small></span>
+        <small style="color:#0a3d62">View <i class="fas fa-chevron-right"></i></small>
+    `;
+    resultList.appendChild(div);
+  });
+}
+
+// --- NEW FEATURE: AUTO FILL FROM RECORDED MOTHERS ---
+function updateMotherDatalist() {
+    const dl = document.getElementById('motherList');
+    dl.innerHTML = '';
+    
+    // Use a Set to store unique mother names (Last, First)
+    const uniqueMothers = new Set();
+    
+    records.forEach(r => {
+        // Index 16: M-Last, Index 14: M-First, Index 15: M-Middle
+        if(r[16] && r[14]) {
+            // Format: "LAST, FIRST" (Middle used in search, not key)
+            const motherKey = `${r[16]}, ${r[14]}`;
+            
+            if(!uniqueMothers.has(motherKey)){
+                uniqueMothers.add(motherKey);
+                const option = document.createElement('option');
+                // Value displayed to user: "LAST, FIRST MIDDLE"
+                option.value = `${r[16]}, ${r[14]} ${r[15] || ''}`.trim(); 
+                dl.appendChild(option);
+            }
+        }
+    });
+}
+
+function autoFillMother(inputObj) {
+    const val = inputObj.value;
+    if(!val) return;
+
+    // Find the record where Mother's name matches the selection
+    // We compare constructed string "LAST, FIRST MIDDLE"
+    const found = records.find(r => {
+        const mStr = `${r[16]}, ${r[14]} ${r[15] || ''}`.trim();
+        return mStr === val;
+    });
+    
+    if(found) {
+        // Auto-fill Mother fields from the FOUND record's mother columns
+        document.getElementById('mLast').value = found[16];   // Mother's Last
+        document.getElementById('mFirst').value = found[14];  // Mother's First
+        document.getElementById('mMiddle').value = found[15]; // Mother's Middle
+    }
+}
+
+// --- VIEWER FUNCTIONALITY ---
+function viewRecord(index) {
+    const r = records[index];
+    const html = HEADERS.map((h, i) => `
+        <div class="detail-row">
+            <span class="detail-label">${h}</span>
+            <span class="detail-val">${r[i] || '-'}</span>
+        </div>
+    `).join('');
+    
+    document.getElementById('viewer-content').innerHTML = html;
+    document.getElementById('viewer-overlay').style.display = 'flex';
+}
+
+function closeViewer() {
+    document.getElementById('viewer-overlay').style.display = 'none';
+}
+
+function exportExcel(){
+  if(records.length === 0){ alert("No records to export."); return; }
+
+  const wb = XLSX.utils.book_new();
+
+  // SHEET 1: INSTRUCTIONS
+  const instructionData = [
+      ["INSTRUCTIONS"],
+      ["This file was generated by SEC JERICK RBI System."],
+      ["Please go to the 'DATA' sheet (Sheet 2) to view the records."]
+  ];
+  const wsInstructions = XLSX.utils.aoa_to_sheet(instructionData);
+  XLSX.utils.book_append_sheet(wb, wsInstructions, "INSTRUCTIONS");
+
+  // SHEET 2: DATA
+  const allData = [HEADERS, ...records];
+  const wsData = XLSX.utils.aoa_to_sheet(allData);
+  
+  const wscols = HEADERS.map(h => ({wch: h.length + 5}));
+  wsData['!cols'] = wscols;
+
+  XLSX.utils.book_append_sheet(wb, wsData, "DATA");
+
+  const dateStr = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `RBI_Export_${dateStr}.xlsx`);
+}
+
+// Removed buttons from HTML, keeping functions just in case (as per 'no code lost' instruction)
+function openDrive(){
+    let driveLink = localStorage.getItem('rbiDriveLink');
+    if(!driveLink){
+        driveLink = prompt("Paste your Google Drive Folder Link here:");
+        if(driveLink) localStorage.setItem('rbiDriveLink', driveLink);
+    }
+    if(driveLink) window.open(driveLink, '_blank');
+}
+
+function shareData(){
+    if (navigator.share) {
+        navigator.share({
+            title: 'RBI System',
+            text: `RBI System Update: ${records.length} records stored.`,
+            url: window.location.href
+        }).catch(console.error);
+    } else {
+        alert(`Share not supported. Records: ${records.length}`);
+    }
+}
+
+renderList();
+</script>
+</body>
+</html>

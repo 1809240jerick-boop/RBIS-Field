@@ -1,0 +1,16 @@
+{
+  "short_name": "RBI System",
+  "name": "RBI Barangay Inhabitant System",
+  "icons": [
+    {
+      "src": "icon.png",
+      "type": "image/png",
+      "sizes": "1024x1024",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "./index.html",
+  "display": "standalone",
+  "theme_color": "#0a3d62",
+  "background_color": "#ffffff"
+}
