@@ -1,171 +1,179 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RBI System | SEC JERICK</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.png">
+    <meta name="theme-color" content="#0a3d62">
+    <meta name="application-name" content="RBI System">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-<link rel="apple-touch-icon" href="icon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-<meta name="theme-color" content="#0a3d62">
-<meta name="application-name" content="RBI System">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+    <script>
+      if ('serviceWorker' in navigator) {
+        // We add a timestamp (?v=...) to bypass the browser's cache of the sw.js file
+        navigator.serviceWorker.register('sw.js?v=' + new Date().getTime())
+          .then((reg) => {
+            console.log('Service Worker Registered');
+            
+            // If there is an update waiting to happen, tell it to skip waiting immediately
+            if (reg.waiting) {
+              reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
 
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js');
-    });
-  }
-</script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>RBI System | SEC JERICK</title>
+        // Listen for the "controllerchange" event
+        // This fires when the new Service Worker takes over. We reload so the user sees new content.
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          window.location.reload();
+        });
+      }
+    </script>
 
-<meta name="theme-color" content="#0a3d62">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="application-name" content="RBI System">
+    <style>
+        /* HARD RESET & MOBILE STYLES */
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #eef1f5; -webkit-tap-highlight-color: transparent; }
 
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+        /* SECURITY OVERLAY */
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0a3d62; z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; color: white; }
+        .login-box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); width: 85%; max-width: 350px; color: #333; text-align: center; }
 
-<style>
-/* HARD RESET & MOBILE STYLES */
-*, *::before, *::after { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', sans-serif; background: #eef1f5; -webkit-tap-highlight-color: transparent; }
+        /* VIEWER MODAL */
+        #viewer-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: flex-end; }
+        .viewer-card { background: #fff; width: 100%; max-width: 500px; height: 90vh; border-radius: 20px 20px 0 0; padding: 20px; overflow-y: auto; position: relative; animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-/* SECURITY OVERLAY */
-#login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0a3d62; z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; color: white; }
-.login-box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); width: 85%; max-width: 350px; color: #333; text-align: center; }
+        .app {
+            max-width: 450px; 
+            margin: 0 auto;
+            background: #ffffff;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
 
-/* VIEWER MODAL */
-#viewer-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: flex-end; }
-.viewer-card { background: #fff; width: 100%; max-width: 500px; height: 90vh; border-radius: 20px 20px 0 0; padding: 20px; overflow-y: auto; position: relative; animation: slideUp 0.3s ease-out; }
-@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        header {
+            background: #0a3d62;
+            color: #ffffff;
+            padding: 16px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
 
-.app {
-  max-width: 450px; 
-  margin: 0 auto;
-  background: #ffffff;
-  min-height: 100vh;
-  box-shadow: 0 0 20px rgba(0,0,0,0.1);
-}
+        /* TABS STYLING */
+        .tab-container {
+            display: flex;
+            background: #0a3d62;
+            padding-bottom: 10px;
+        }
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.6);
+            padding: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-btn.active {
+            color: white;
+            border-bottom: 3px solid #1e90ff;
+        }
 
-header {
-  background: #0a3d62;
-  color: #ffffff;
-  padding: 16px;
-  text-align: center;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
+        h3 { margin: 0; font-size: 18px; }
+        small { opacity: 0.8; font-size: 12px; }
 
-/* TABS STYLING */
-.tab-container {
-    display: flex;
-    background: #0a3d62;
-    padding-bottom: 10px;
-}
-.tab-btn {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: rgba(255,255,255,0.6);
-    padding: 10px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-}
-.tab-btn.active {
-    color: white;
-    border-bottom: 3px solid #1e90ff;
-}
+        .section { padding: 16px; border-bottom: 8px solid #f0f2f5; }
 
-h3 { margin: 0; font-size: 18px; }
-small { opacity: 0.8; font-size: 12px; }
+        .form-group { width: 100%; margin-bottom: 14px; }
 
-.section { padding: 16px; border-bottom: 8px solid #f0f2f5; }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 6px;
+        }
+        .req { color: red; margin-left: 3px; } /* Asterisk for required */
 
-.form-group { width: 100%; margin-bottom: 14px; }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 15px;
+            background: #fff;
+        }
 
-label {
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-  color: #444;
-  margin-bottom: 6px;
-}
-.req { color: red; margin-left: 3px; } /* Asterisk for required */
+        input:focus, select:focus { border-color: #0a3d62; outline: none; }
 
-input, select {
-  width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  font-size: 15px;
-  background: #fff;
-}
+        button {
+            width: 100%;
+            padding: 14px;
+            border-radius: 8px;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            margin-top: 8px;
+            background: #1e90ff;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        button:active { transform: scale(0.98); }
 
-input:focus, select:focus { border-color: #0a3d62; outline: none; }
+        /* Button Colors */
+        button.secondary { background: #27ae60; } /* Excel Green */
+        button.close-btn { background: #e74c3c; margin-bottom: 20px; } 
+        button.edit-btn { background: #f39c12; margin-bottom: 10px; color: white; } 
 
-button {
-  width: 100%;
-  padding: 14px;
-  border-radius: 8px;
-  border: none;
-  font-size: 15px;
-  font-weight: 600;
-  margin-top: 8px;
-  background: #1e90ff;
-  color: #fff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-button:active { transform: scale(0.98); }
+        /* SCROLLABLE LIST - Showing approx 4 records */
+        .list { margin-top: 10px; max-height: 280px; overflow-y: auto; border: 1px solid #f0f0f0; border-radius: 8px; }
 
-/* Button Colors */
-button.secondary { background: #27ae60; } /* Excel Green */
-button.close-btn { background: #e74c3c; margin-bottom: 20px; } 
+        .card {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .card:active { background: #f9f9f9; }
+        .card span { font-weight: 500; }
+        .card small { color: #888; }
 
-/* SCROLLABLE LIST - Showing approx 4 records */
-.list { margin-top: 10px; max-height: 280px; overflow-y: auto; border: 1px solid #f0f0f0; border-radius: 8px; }
+        .detail-row { border-bottom: 1px solid #eee; padding: 10px 0; }
+        .detail-label { font-size: 11px; color: #888; text-transform: uppercase; display: block; }
+        .detail-val { font-size: 14px; font-weight: 600; color: #333; }
 
-.card {
-  padding: 12px;
-  border-bottom: 1px solid #eee;
-  font-size: 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-}
-.card:active { background: #f9f9f9; }
-.card span { font-weight: 500; }
-.card small { color: #888; }
+        footer {
+            text-align: center;
+            font-size: 12px;
+            padding: 20px;
+            color: #666;
+            background: #f8f9fa;
+        }
 
-.detail-row { border-bottom: 1px solid #eee; padding: 10px 0; }
-.detail-label { font-size: 11px; color: #888; text-transform: uppercase; display: block; }
-.detail-val { font-size: 14px; font-weight: 600; color: #333; }
-
-footer {
-  text-align: center;
-  font-size: 12px;
-  padding: 20px;
-  color: #666;
-  background: #f8f9fa;
-}
-
-/* Utility to hide/show tabs */
-.hidden-tab { display: none; }
-</style>
+        /* Utility to hide/show tabs */
+        .hidden-tab { display: none; }
+    </style>
 </head>
 <body>
 
@@ -181,8 +189,8 @@ footer {
 
 <div class="app">
 <header>
-  <h3>RBI System</h3>
-  <small>Barangay Inhabitant Registration</small>
+    <h3>RBI System</h3>
+    <small>Barangay Inhabitant Registration</small>
 </header>
 
 <div class="tab-container">
@@ -192,71 +200,74 @@ footer {
 
 <div id="tab-registration">
     <div class="section">
-      <div class="form-group"><label>Inhabitant Type<span class="req">*</span></label><select id="inhabitantType"><option>NON-MIGRANT</option><option>MIGRANT</option><option>TRANSIENT</option></select></div>
-      
-      <div class="form-group"><label>Last Name<span class="req">*</span></label><input id="lastName" placeholder="e.g. Dela Cruz"></div>
-      <div class="form-group"><label>First Name<span class="req">*</span></label><input id="firstName" placeholder="e.g. Juan"></div>
-      <div class="form-group"><label>Middle Name<span class="req">*</span></label><input id="middleName"></div>
-      <div class="form-group"><label>Suffix</label><input id="suffix" placeholder="e.g. Jr, III (Optional)"></div>
-      <div class="form-group"><label>Birth Place<span class="req">*</span></label><input id="birthPlace"></div>
-      <div class="form-group"><label>Birthday<span class="req">*</span></label><input type="date" id="birthDate"></div>
-      <div class="form-group"><label>Sex<span class="req">*</span></label><select id="sex"><option>MALE</option><option>FEMALE</option></select></div>
-      <div class="form-group"><label>Civil Status<span class="req">*</span></label><select id="civilStatus"><option>SINGLE</option><option>MARRIED</option><option>WIDOWED</option><option>SEPARATED</option><option>COMMON LAW/ LIVE-IN</option></select></div>
-      <div class="form-group"><label>Citizenship<span class="req">*</span></label><input id="citizenship" value="FILIPINO"></div>
-      <div class="form-group"><label>Profession / Occupation</label><input id="profession"></div>
-      
-      <div class="form-group"><label>Contact Number (Optional)</label><input id="contact" type="tel"></div>
-      <div class="form-group"><label>Email Address (Optional)</label><input id="email" type="email"></div>
-      
-      <div class="form-group"><label>Educational Attainment<span class="req">*</span></label>
-          <select id="education">
-              <option>NONE</option>
-              <option>ELEMENTARY LEVEL</option>
-              <option>ELEMENTARY GRADUATE</option>
-              <option>HIGH SCHOOL LEVEL</option>
-              <option>HIGH SCHOOL GRADUATE</option>
-              <option>SENIOR HIGH SCHOOL LEVEL</option>
-              <option>SENIOR HIGH SCHOOL GRADUATE</option>
-              <option>COLLEGE LEVEL</option>
-              <option>COLLEGE GRADUATE</option>
-              <option>VOCATIONAL</option>
-              <option>POST GRADUATE</option>
-          </select>
-      </div>
-      
-      <div style="margin-top:15px; border-top:1px dashed #ccc; padding-top:10px;">
-          <label style="color:#0a3d62;">Mother's Maiden Name<span class="req">*</span></label>
-          
-          <div class="form-group" style="background:#f0f8ff; padding:10px; border-radius:8px; border:1px solid #bde0ff;">
-             <label style="color:#1e90ff; margin-bottom:4px; font-size:11px;">AUTO-FILL FROM RECORDED MOTHERS</label>
-             <input id="motherSearch" list="motherList" onchange="autoFillMother(this)" placeholder="Search Mother's Name..." style="border:1px solid #1e90ff;">
-             <datalist id="motherList"></datalist>
-          </div>
+        <div class="form-group"><label>Inhabitant Type<span class="req">*</span></label><select id="inhabitantType"><option>NON-MIGRANT</option><option>MIGRANT</option><option>TRANSIENT</option></select></div>
+        
+        <div class="form-group"><label>Last Name<span class="req">*</span></label><input id="lastName" placeholder="e.g. Dela Cruz"></div>
+        <div class="form-group"><label>First Name<span class="req">*</span></label><input id="firstName" placeholder="e.g. Juan"></div>
+        <div class="form-group"><label>Middle Name<span class="req">*</span></label><input id="middleName"></div>
+        <div class="form-group"><label>Suffix</label><input id="suffix" placeholder="e.g. Jr, III (Optional)"></div>
+        <div class="form-group"><label>Birth Place<span class="req">*</span></label><input id="birthPlace"></div>
+        <div class="form-group"><label>Birthday<span class="req">*</span></label><input type="date" id="birthDate"></div>
+        <div class="form-group"><label>Sex<span class="req">*</span></label><select id="sex"><option>MALE</option><option>FEMALE</option></select></div>
+        <div class="form-group"><label>Civil Status<span class="req">*</span></label><select id="civilStatus"><option>SINGLE</option><option>MARRIED</option><option>WIDOWED</option><option>SEPARATED</option><option>COMMON LAW/ LIVE-IN</option></select></div>
+        <div class="form-group"><label>Citizenship<span class="req">*</span></label><input id="citizenship" value="FILIPINO"></div>
+        <div class="form-group"><label>Profession / Occupation</label><input id="profession"></div>
+        
+        <div class="form-group"><label>Contact Number (Optional)</label><input id="contact" type="tel"></div>
+        <div class="form-group"><label>Email Address (Optional)</label><input id="email" type="email"></div>
+        
+        <div class="form-group"><label>Educational Attainment<span class="req">*</span></label>
+            <select id="education">
+                <option>NONE</option>
+                <option>ELEMENTARY LEVEL</option>
+                <option>ELEMENTARY GRADUATE</option>
+                <option>HIGH SCHOOL LEVEL</option>
+                <option>HIGH SCHOOL GRADUATE</option>
+                <option>SENIOR HIGH SCHOOL LEVEL</option>
+                <option>SENIOR HIGH SCHOOL GRADUATE</option>
+                <option>COLLEGE LEVEL</option>
+                <option>COLLEGE GRADUATE</option>
+                <option>VOCATIONAL</option>
+                <option>POST GRADUATE</option>
+            </select>
+        </div>
+        
+        <div style="margin-top:15px; border-top:1px dashed #ccc; padding-top:10px;">
+            <label style="color:#0a3d62;">Mother's Maiden Name<span class="req">*</span></label>
+            
+            <div class="form-group" style="background:#f0f8ff; padding:10px; border-radius:8px; border:1px solid #bde0ff;">
+               <label style="color:#1e90ff; margin-bottom:4px; font-size:11px;">AUTO-FILL FROM RECORDED MOTHERS</label>
+               <input id="motherSearch" list="motherList" onchange="autoFillMother(this)" placeholder="Search Mother's Name..." style="border:1px solid #1e90ff;">
+               <datalist id="motherList"></datalist>
+            </div>
 
-          <div class="form-group"><input id="mFirst" placeholder="Mother's First Name"></div>
-          <div class="form-group"><input id="mMiddle" placeholder="Mother's Middle Name"></div>
-          <div class="form-group"><input id="mLast" placeholder="Mother's Last Name"></div>
-      </div>
+            <div class="form-group"><input id="mFirst" placeholder="Mother's First Name"></div>
+            <div class="form-group"><input id="mMiddle" placeholder="Mother's Middle Name"></div>
+            <div class="form-group"><input id="mLast" placeholder="Mother's Last Name"></div>
+        </div>
 
-      <button onclick="saveRecord()">SAVE RECORD</button>
+        <div style="display:flex; gap:10px;">
+            <button id="btn-cancel" onclick="cancelEdit()" style="display:none; background:#e74c3c; width:40%;">CANCEL</button>
+            <button id="btn-save" onclick="saveRecord()">SAVE RECORD</button>
+        </div>
     </div>
 </div>
 
 <div id="tab-records" class="hidden-tab">
     <div class="section">
-      <div class="form-group">
-          <label>Search Records (Last or First Name)</label>
-          <input id="searchBox" oninput="renderList()" placeholder="Type Name to search...">
-      </div>
-      <div class="list" id="resultList"></div>
+        <div class="form-group">
+            <label>Search Records (Last or First Name)</label>
+            <input id="searchBox" oninput="renderList()" placeholder="Type Name to search...">
+        </div>
+        <div class="list" id="resultList"></div>
     </div>
 
     <div class="section">
-      <label>Export Data</label>
-      <p style="font-size:12px; color:#666; margin-bottom:10px;">
-          Downloads BIMS compatible file (Sheet 1: Instructions, Sheet 2: Data).
-      </p>
-      <button class="secondary" onclick="exportExcel()">Export Excel File</button>
+        <label>Export Data</label>
+        <p style="font-size:12px; color:#666; margin-bottom:10px;">
+            Downloads BIMS compatible file (Sheet 1: Instructions, Sheet 2: Data).
+        </p>
+        <button class="secondary" onclick="exportExcel()">Export Excel File</button>
     </div>
 </div>
 
@@ -267,7 +278,7 @@ footer {
     <div class="viewer-card">
         <h3 style="color:#0a3d62; border-bottom:2px solid #1e90ff; padding-bottom:10px; margin-bottom:15px;">Record Details</h3>
         <div id="viewer-content"></div>
-        <button class="close-btn" onclick="closeViewer()">Close Viewer</button>
+        <div id="viewer-actions" style="margin-top:20px;"></div>
     </div>
 </div>
 
@@ -283,6 +294,7 @@ const HEADERS = [
 
 let records = JSON.parse(localStorage.getItem('rbiRecords')) || [];
 let settings = JSON.parse(localStorage.getItem('rbi_settings')) || { custom_password: '' };
+let editingIndex = -1; // -1 means adding new, otherwise index of record being edited
 
 // --- SECURITY LOGIC ---
 function getDynamicPassword() {
@@ -402,36 +414,85 @@ function saveRecord(){
     mLast.value.toUpperCase()
   ];
 
-  records.push(newRow);
+  if (editingIndex > -1) {
+      // UPDATE EXISTING
+      records[editingIndex] = newRow;
+      alert('Record Updated Successfully!');
+      cancelEdit(); // Reset form UI
+  } else {
+      // SAVE NEW
+      records.push(newRow);
+      alert('Record Saved!');
+  }
+
   localStorage.setItem('rbiRecords', JSON.stringify(records));
-  
-  alert('Record Saved!');
-  
-  // Update the mother auto-fill list with the new entry
   updateMotherDatalist();
 
-  // 2. Clear fields but KEEP Inhabitant Type
-  const currentType = inhabitantType.value;
-  
-  // Clear inputs
-  const inputs = document.querySelectorAll('input');
-  inputs.forEach(input => input.value = '');
-  
-  // Restore Type & Defaults
-  inhabitantType.value = currentType;
-  citizenship.value = "FILIPINO"; 
+  // Clear fields logic
+  if(editingIndex === -1) {
+      // Only clear input fields completely if we just saved a NEW record
+      // If we finished editing, cancelEdit() handles the clearing/resetting
+      const currentType = inhabitantType.value;
+      const inputs = document.querySelectorAll('input');
+      inputs.forEach(input => input.value = '');
+      inhabitantType.value = currentType;
+      citizenship.value = "FILIPINO"; 
+      inhabitantType.focus();
+  }
   
   renderList();
-  
-  // 3. Set Focus back to Inhabitant Type
-  inhabitantType.focus();
+}
+
+// --- EDITING LOGIC ---
+function startEdit(index) {
+    const r = records[index];
+    
+    // Map array data to Inputs
+    document.getElementById('inhabitantType').value = r[0];
+    document.getElementById('lastName').value = r[1];
+    document.getElementById('firstName').value = r[2];
+    document.getElementById('middleName').value = r[3];
+    document.getElementById('suffix').value = r[4];
+    document.getElementById('birthPlace').value = r[5];
+    document.getElementById('birthDate').value = r[6];
+    document.getElementById('sex').value = r[7];
+    document.getElementById('civilStatus').value = r[8];
+    document.getElementById('citizenship').value = r[9];
+    document.getElementById('profession').value = r[10];
+    document.getElementById('contact').value = r[11];
+    document.getElementById('email').value = r[12];
+    document.getElementById('education').value = r[13];
+    document.getElementById('mFirst').value = r[14];
+    document.getElementById('mMiddle').value = r[15];
+    document.getElementById('mLast').value = r[16];
+
+    // Set State
+    editingIndex = index;
+    
+    // UI Changes
+    document.getElementById('btn-save').innerText = "UPDATE RECORD";
+    document.getElementById('btn-cancel').style.display = "block";
+    
+    closeViewer();
+    switchTab('reg');
+    window.scrollTo(0,0);
+}
+
+function cancelEdit() {
+    editingIndex = -1;
+    document.getElementById('btn-save').innerText = "SAVE RECORD";
+    document.getElementById('btn-cancel').style.display = "none";
+    
+    // Clear inputs
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => input.value = '');
+    document.getElementById('citizenship').value = "FILIPINO";
 }
 
 function renderList(){
   const q = searchBox.value.toLowerCase();
   resultList.innerHTML = '';
   
-  // UPDATED SEARCH: Checks Last Name (index 1) OR First Name (index 2)
   const filtered = records.map((r, i) => ({data: r, index: i}))
                           .filter(item => item.data[1].toLowerCase().includes(q) || item.data[2].toLowerCase().includes(q));
   
@@ -458,19 +519,15 @@ function updateMotherDatalist() {
     const dl = document.getElementById('motherList');
     dl.innerHTML = '';
     
-    // Use a Set to store unique mother names (Last, First)
     const uniqueMothers = new Set();
     
     records.forEach(r => {
-        // Index 16: M-Last, Index 14: M-First, Index 15: M-Middle
         if(r[16] && r[14]) {
-            // Format: "LAST, FIRST" (Middle used in search, not key)
             const motherKey = `${r[16]}, ${r[14]}`;
             
             if(!uniqueMothers.has(motherKey)){
                 uniqueMothers.add(motherKey);
                 const option = document.createElement('option');
-                // Value displayed to user: "LAST, FIRST MIDDLE"
                 option.value = `${r[16]}, ${r[14]} ${r[15] || ''}`.trim(); 
                 dl.appendChild(option);
             }
@@ -482,15 +539,12 @@ function autoFillMother(inputObj) {
     const val = inputObj.value;
     if(!val) return;
 
-    // Find the record where Mother's name matches the selection
-    // We compare constructed string "LAST, FIRST MIDDLE"
     const found = records.find(r => {
         const mStr = `${r[16]}, ${r[14]} ${r[15] || ''}`.trim();
         return mStr === val;
     });
     
     if(found) {
-        // Auto-fill Mother fields from the FOUND record's mother columns
         document.getElementById('mLast').value = found[16];   // Mother's Last
         document.getElementById('mFirst').value = found[14];  // Mother's First
         document.getElementById('mMiddle').value = found[15]; // Mother's Middle
@@ -508,6 +562,13 @@ function viewRecord(index) {
     `).join('');
     
     document.getElementById('viewer-content').innerHTML = html;
+    
+    // Inject Buttons (Edit & Close)
+    document.getElementById('viewer-actions').innerHTML = `
+        <button class="edit-btn" onclick="startEdit(${index})">EDIT RECORD</button>
+        <button class="close-btn" onclick="closeViewer()">Close Viewer</button>
+    `;
+    
     document.getElementById('viewer-overlay').style.display = 'flex';
 }
 
@@ -540,28 +601,6 @@ function exportExcel(){
 
   const dateStr = new Date().toISOString().slice(0,10);
   XLSX.writeFile(wb, `RBI_Export_${dateStr}.xlsx`);
-}
-
-// Removed buttons from HTML, keeping functions just in case (as per 'no code lost' instruction)
-function openDrive(){
-    let driveLink = localStorage.getItem('rbiDriveLink');
-    if(!driveLink){
-        driveLink = prompt("Paste your Google Drive Folder Link here:");
-        if(driveLink) localStorage.setItem('rbiDriveLink', driveLink);
-    }
-    if(driveLink) window.open(driveLink, '_blank');
-}
-
-function shareData(){
-    if (navigator.share) {
-        navigator.share({
-            title: 'RBI System',
-            text: `RBI System Update: ${records.length} records stored.`,
-            url: window.location.href
-        }).catch(console.error);
-    } else {
-        alert(`Share not supported. Records: ${records.length}`);
-    }
 }
 
 renderList();
