@@ -18,11 +18,21 @@
 
     <script>
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js')
+        navigator.serviceWorker.register('sw.js') // No timestamp here (Prevents loop)
           .then((reg) => {
              console.log('Service Worker Registered');
+             
+             // If a new SW is waiting, tell it to activate
+             if (reg.waiting) {
+                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+             }
           })
           .catch(err => console.log('SW Registration failed', err));
+
+        // When the new Service Worker takes over, reload the page ONCE.
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+           window.location.reload();
+        });
       }
     </script>
 
