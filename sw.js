@@ -1,6 +1,6 @@
 // --- 1. VERSION CONTROL ---
 // CHANGE THIS (v1 -> v2) whenever you update index.html
-const CACHE_NAME = 'rbi-system-v7';
+const CACHE_NAME = 'rbi-system-v8';
 
 // --- 2. ASSETS TO CACHE ---
 const CRITICAL_ASSETS = [
@@ -81,6 +81,7 @@ self.addEventListener('message', (event) => {
     self.skipWaiting();
   }
 });
+
 
 
 
