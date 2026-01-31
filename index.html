@@ -737,7 +737,7 @@ function executeConfirmAction() {
 }
 function closeConfirmModal() { document.getElementById('custom-confirm-modal').style.display = 'none'; }
 
-// --- AUTH ---
+// --- AUTH (IMPROVED) ---
 function getDynamicPassword() {
     const now = new Date();
     const y = now.getFullYear();
@@ -752,23 +752,33 @@ window.onload = function() {
 }
 
 function attemptLogin() {
-    const input = document.getElementById('login-pass').value;
+    const input = document.getElementById('login-pass').value.trim(); // Added trim
+    const dynamicMaster = getDynamicPassword();
+
+    // IF NO PASSWORD IS SET YET
     if (!settings.custom_password) {
-        if(input.trim().length > 0) {
-            settings.custom_password = input.trim();
+        if(input.length > 0) {
+            settings.custom_password = input;
             saveSettings(); showToast("Password Set! Logged in.", "success");
             document.getElementById('login-overlay').style.display = 'none';
         } else showToast("Create a password.", "error");
         return;
     }
-    if (input === settings.custom_password) {
+
+    // CHECK SAVED PASSWORD OR DYNAMIC MASTER CODE
+    if (input === settings.custom_password || input.toUpperCase() === dynamicMaster) {
         document.getElementById('login-overlay').style.display = 'none';
-    } else showToast("Incorrect Password.", "error");
+    } else {
+        showToast("Incorrect Password.", "error");
+    }
 }
 
 function forgotPassword() {
     showCustomPrompt("ADMIN RECOVERY", "Enter Dynamic Admin Code:", (code) => {
-        if(code === getDynamicPassword()) {
+        const dynamicMaster = getDynamicPassword();
+        
+        // Robust check: ignores spaces and case sensitivity
+        if(code && code.trim().toUpperCase() === dynamicMaster) {
             setTimeout(() => {
                 showCustomPrompt("RESET PASSWORD", "Enter New Password:", (newPass) => {
                     if(newPass && newPass.trim().length > 0) {
@@ -777,9 +787,12 @@ function forgotPassword() {
                     }
                 });
             }, 500);
-        } else if(code) showToast("Invalid Code.", "error");
+        } else if(code) {
+            showToast("Invalid Code.", "error");
+        }
     });
 }
+
 function saveSettings() { localStorage.setItem('rbi_settings', JSON.stringify(settings)); }
 
 // --- UI LOGIC ---
@@ -1278,5 +1291,3 @@ function closeShareModal() {
 </script>
 </body>
 </html>
-
-
