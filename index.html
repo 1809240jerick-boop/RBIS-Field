@@ -44,7 +44,7 @@
             align-items: center;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             position: sticky; top: 0; z-index: 900;
-            height: 70px; /* Fixed height to ensure tabs fit perfectly below */
+            height: 70px; 
         }
         
         .purok-selector-btn {
@@ -57,9 +57,10 @@
             cursor: pointer;
             transition: 0.2s;
             display: flex; align-items: center; gap: 8px;
+            max-width: 200px;
         }
         .purok-selector-btn:active { background: rgba(255,255,255,0.2); transform: scale(0.98); }
-        .purok-badge { background: var(--warning); color: #000; padding: 2px 6px; border-radius: 10px; font-weight: 800; font-size: 11px; }
+        .purok-badge { background: var(--warning); color: #000; padding: 2px 6px; border-radius: 10px; font-weight: 800; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
 
         .app-container { 
             max-width: 600px; 
@@ -71,20 +72,20 @@
             flex-direction: column; 
         }
 
-        /* TAB NAV - UPDATED FIT */
+        /* TAB NAV */
         .tab-nav { 
             display: flex; 
             background: white; 
             border-bottom: 1px solid #e2e8f0; 
             position: sticky; 
-            top: 70px; /* MATCH CONTEXT BAR HEIGHT */
+            top: 70px; 
             z-index: 800; 
             overflow-x: auto; 
             white-space: nowrap;
             -webkit-overflow-scrolling: touch; 
             scrollbar-width: none; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            padding-right: 20px; /* Add spacing at the end */
+            padding-right: 20px; 
         }
         .tab-nav::-webkit-scrollbar { display: none; }
 
@@ -289,6 +290,18 @@
             display: flex; align-items: center; gap: 10px; background: #f8fafc;
         }
         .template-btn:hover { border-color: var(--accent); background: white; }
+
+        /* RADIO BUTTON GROUP STYLING */
+        .radio-group {
+            display: flex; gap: 5px; margin-bottom: 15px; background: #f1f5f9; padding: 4px; border-radius: 12px;
+        }
+        .radio-option {
+            flex: 1; text-align: center; padding: 8px; font-size: 11px; font-weight: 700; 
+            border-radius: 8px; cursor: pointer; color: var(--text-light); transition: 0.2s;
+        }
+        .radio-option.selected {
+            background: white; color: var(--accent); box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
     </style>
 </head>
 <body>
@@ -354,15 +367,54 @@
 <div id="share-modal" class="modal-overlay" style="z-index:99996;">
     <div class="modal-box">
         <div style="color:var(--success); font-size:50px; margin-bottom:15px;"><i class="fas fa-check-circle"></i></div>
-        <h3 style="margin:0;">DOWNLOAD COMPLETE</h3>
-        <p style="font-size:13px; color:#666; margin: 10px 0 25px 0;">File has been saved to your device.</p>
+        <h3 style="margin:0;">FILE READY</h3>
+        <p style="font-size:13px; color:#666; margin: 10px 0 20px 0;">File generated successfully.</p>
         
-        <a id="share-link-text" class="share-link" onclick="triggerShareAction()">
-            <i class="fas fa-share-alt"></i> Share File
-        </a>
+        <button id="btn-smart-share" class="btn btn-primary" onclick="triggerSmartAction()" style="margin-bottom:12px; padding: 18px;">
+            <i class="fas fa-share-alt" style="font-size:16px;"></i> SHARE VIA APP
+        </button>
 
-        <div style="display:flex; gap:10px; margin-top:25px;">
-            <button class="btn btn-ghost" onclick="closeShareModal()">CLOSE</button>
+        <button class="btn btn-ghost" onclick="downloadDirectly()" style="border:1px solid #cbd5e1;">
+            <i class="fas fa-download"></i> SAVE TO DEVICE
+        </button>
+
+        <div id="share-fallback-info" style="display:none; color:var(--text-light); font-size:11px; margin-top:15px; padding:10px; background:#f1f5f9; border-radius:8px; border-left:3px solid var(--warning);">
+            <i class="fas fa-info-circle"></i> <b>Note:</b> If "Share via App" doesn't work, please use "Save to Device".
+        </div>
+        
+        <div id="protocol-warning" style="display:none; margin-top:15px; padding:10px; background:#fef2f2; border-left:3px solid var(--danger); border-radius:6px; font-size:11px; text-align:left; color:#991b1b;">
+            <i class="fas fa-exclamation-circle"></i> <b>Offline Mode:</b> Share disabled. Please Save.
+        </div>
+
+        <div style="margin-top:20px; font-size:12px; color:#94a3b8; cursor:pointer; text-decoration:underline;" onclick="closeShareModal()">Close</div>
+    </div>
+</div>
+
+<style> @keyframes fadeIn { from { opacity:0; } to { opacity:1; } } </style>
+
+<div id="location-settings-modal" class="modal-overlay" style="z-index:99999;">
+    <div class="modal-box">
+        <h3 style="margin:0; color:var(--primary); margin-bottom:15px;">LOCATION CONTEXT</h3>
+        
+        <label style="text-align:left;">Indicator Type</label>
+        <div class="radio-group">
+            <div class="radio-option selected" id="opt-type-purok" onclick="selectLocType('PUROK')">PUROK</div>
+            <div class="radio-option" id="opt-type-sitio" onclick="selectLocType('SITIO')">SITIO</div>
+            <div class="radio-option" id="opt-type-none" onclick="selectLocType('NONE')">NONE</div>
+        </div>
+
+        <label style="text-align:left;" id="lbl-naming">Naming Convention</label>
+        <div class="radio-group" id="group-naming">
+            <div class="radio-option selected" id="opt-name-num" onclick="selectLocName('NUMBER')">NUMBER</div>
+            <div class="radio-option" id="opt-name-txt" onclick="selectLocName('NAME')">NAME</div>
+        </div>
+
+        <label style="text-align:left; margin-top:10px;" id="lbl-input">Value</label>
+        <input id="loc-input-val" type="text" style="text-align:center; margin-bottom:20px; font-size:16px;">
+
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-ghost" onclick="closeLocationModal()">CANCEL</button>
+            <button class="btn btn-primary" onclick="saveLocationSettings()">APPLY</button>
         </div>
     </div>
 </div>
@@ -426,8 +478,8 @@
         <div class="context-info">
             <h4 style="margin:0; font-weight:900; letter-spacing:1px; font-size:16px;">RBI FIELD</h4>
         </div>
-        <div class="purok-selector-btn" onclick="openPurokInputModal()">
-            <span>PUROK</span>
+        <div class="purok-selector-btn" onclick="openLocationModal()">
+            <span id="globalLabel">PUROK</span>
             <span class="purok-badge" id="globalPurokDisplay">1</span>
             <i class="fas fa-chevron-down" style="font-size:10px;"></i>
         </div>
@@ -442,7 +494,8 @@
 
     <div id="tab-registration" class="content-area active">
         <div id="edit-banner" style="background:var(--warning); color:white; padding:12px; border-radius:8px; margin-bottom:20px; display:none; text-align:center; font-size:12px; font-weight:800; letter-spacing:0.5px; box-shadow:0 4px 10px rgba(245, 158, 11, 0.3);">
-            <i class="fas fa-edit"></i> EDITING RECORD - PUROK <span id="edit-purok-indicator"></span>
+            <div style="margin-bottom:4px;"><i class="fas fa-edit"></i> EDITING RECORD</div>
+            <div id="edit-location-msg" style="color:rgba(255,255,255,0.9);"></div>
         </div>
 
         <div class="card-section">
@@ -463,7 +516,16 @@
             <div class="form-group"><label>Civil Status<span class="req">*</span></label>
                 <select id="civilStatus"><option>SINGLE</option><option>MARRIED</option><option>WIDOWED</option><option>SEPARATED</option><option>COMMON LAW/ LIVE-IN</option></select>
             </div>
-            <div class="form-group"><label>Citizenship<span class="req">*</span></label><input id="citizenship" value="FILIPINO"></div>
+            
+            <div class="form-group">
+                <label>Citizenship<span class="req">*</span></label>
+                <select id="citizenshipSelect" onchange="checkCitizenship()">
+                    <option value="FILIPINO">FILIPINO</option>
+                    <option value="FOREIGNER">FOREIGNER</option>
+                </select>
+                <input id="citizenshipOther" placeholder="SPECIFY NATIONALITY..." style="display:none; margin-top:10px; border-color:var(--accent);">
+            </div>
+
             <div class="form-group">
                 <label>Religion (Select/Type Other)<span class="req">*</span></label>
                 <select id="religionSelect" onchange="checkReligion()">
@@ -480,6 +542,15 @@
                 <input id="religionOther" placeholder="TYPE RELIGION HERE..." style="display:none; margin-top:10px; border-color:var(--accent);">
             </div>
             <div class="form-group"><label>Profession / Occupation</label><input id="profession"></div>
+            
+            <div class="form-group">
+                <label>Labor Status</label>
+                <select id="laborStatus">
+                    <option value="EMPLOYED">EMPLOYED</option>
+                    <option value="UNEMPLOYED">UNEMPLOYED</option>
+                    <option value="NOT IN LABOR FORCE">NOT IN LABOR FORCE</option>
+                </select>
+            </div>
         </div>
 
         <div class="card-section">
@@ -508,6 +579,8 @@
                 <div class="toggle-card"><label for="is4Ps">4Ps</label><input type="checkbox" id="is4Ps"></div>
                 <div class="toggle-card"><label for="isIPS">IPs</label><input type="checkbox" id="isIPS"></div>
                 <div class="toggle-card"><label for="isSolo">Solo Parent</label><input type="checkbox" id="isSolo"></div>
+                <div class="toggle-card"><label for="isOFW">OFW</label><input type="checkbox" id="isOFW"></div>
+                <div class="toggle-card"><label for="isISY">ISY</label><input type="checkbox" id="isISY"></div>
             </div>
         </div>
 
@@ -561,14 +634,8 @@
     <div id="tab-config" class="content-area">
         <div class="card-section">
             <h5 class="section-title">SYSTEM CONFIGURATION</h5>
+            
             <div class="form-group">
-                <label>Set Maximum Purok Number</label>
-                <div style="display:flex; gap:10px;">
-                    <input type="number" id="confPurok" placeholder="Default: 10">
-                    <button class="btn btn-primary" style="width:auto;" onclick="savePurokConf()">UPDATE</button>
-                </div>
-            </div>
-            <div class="form-group" style="margin-top:25px;">
                 <label>Manage Additional Addresses</label>
                 <div style="display:flex; gap:10px; margin-bottom:10px;">
                     <input id="newAddress" placeholder="e.g. UPPER BASAK">
@@ -646,8 +713,9 @@ const HEADERS_RBIS = [
     "PROFESSION/ OCCUPATION", "CONTACT NUMBER", "EMAIL ADDRESS", 
     "HIGHEST EDUCATIONAL ATTAINMENT", "MOTHER'S FIRST NAME", 
     "MOTHER'S MIDDLE NAME", "MOTHER'S LAST NAME",
-    "PUROK", "ADDITIONAL ADDRESS", "RELIGION", 
-    "IS OSY", "IS PWD", "IS 4Ps", "IS IPS", "IS SOLO PARENT"
+    "PUROK/SITIO", "ADDITIONAL ADDRESS", "RELIGION", 
+    "IS OSY", "IS PWD", "IS 4Ps", "IS IPS", "IS SOLO PARENT",
+    "LABOR STATUS", "IS OFW", "IS ISY"
 ];
 
 // BIMS Headers (from Sheet 2 Data snippet)
@@ -658,7 +726,9 @@ const HEADERS_BIMS = [
 let records = JSON.parse(localStorage.getItem('rbiRecords')) || [];
 let households = JSON.parse(localStorage.getItem('rbiHouseholds')) || [];
 let settings = JSON.parse(localStorage.getItem('rbi_settings')) || { 
-    custom_password: '', purok_max: 10, addresses: []
+    custom_password: '', 
+    addresses: [],
+    location_config: { type: 'PUROK', naming: 'NUMBER' } // Default
 };
 
 let currentGlobalPurok = localStorage.getItem('globalPurok') || "1";
@@ -670,6 +740,10 @@ let tempHHMembers = [];
 let promptCallback = null;
 let confirmCallback = null;
 let currentExportFile = null;
+
+// Temporary vars for Location Modal
+let tempLocType = 'PUROK';
+let tempLocName = 'NUMBER';
 
 const TABS = ['reg', 'rec', 'hh', 'conf'];
 let currentTab = 'reg';
@@ -747,15 +821,31 @@ function getDynamicPassword() {
 }
 
 window.onload = function() {
+    // 1. Check for Null Puroks and Fix
+    let fixedCount = 0;
+    records.forEach(r => {
+        if (r[17] === null || r[17] === undefined || r[17] === "" || r[17] === "null") {
+            r[17] = currentGlobalPurok;
+            fixedCount++;
+        }
+    });
+    if(fixedCount > 0) {
+        localStorage.setItem('rbiRecords', JSON.stringify(records));
+        console.log(`Auto-fixed ${fixedCount} records with null location.`);
+    }
+
     if(!settings.custom_password) document.getElementById('login-msg').innerText = "Create Your Password to Start";
+    
+    // Initialize Settings if missing
+    if(!settings.location_config) settings.location_config = { type: 'PUROK', naming: 'NUMBER' };
+    
     updateMotherDatalist(); loadConfigUI(); updateGlobalPurokUI();
 }
 
 function attemptLogin() {
-    const input = document.getElementById('login-pass').value.trim(); // Added trim
+    const input = document.getElementById('login-pass').value.trim(); 
     const dynamicMaster = getDynamicPassword();
 
-    // IF NO PASSWORD IS SET YET
     if (!settings.custom_password) {
         if(input.length > 0) {
             settings.custom_password = input;
@@ -765,7 +855,6 @@ function attemptLogin() {
         return;
     }
 
-    // CHECK SAVED PASSWORD OR DYNAMIC MASTER CODE
     if (input === settings.custom_password || input.toUpperCase() === dynamicMaster) {
         document.getElementById('login-overlay').style.display = 'none';
     } else {
@@ -776,8 +865,6 @@ function attemptLogin() {
 function forgotPassword() {
     showCustomPrompt("ADMIN RECOVERY", "Enter Dynamic Admin Code:", (code) => {
         const dynamicMaster = getDynamicPassword();
-        
-        // Robust check: ignores spaces and case sensitivity
         if(code && code.trim().toUpperCase() === dynamicMaster) {
             setTimeout(() => {
                 showCustomPrompt("RESET PASSWORD", "Enter New Password:", (newPass) => {
@@ -797,26 +884,146 @@ function saveSettings() { localStorage.setItem('rbi_settings', JSON.stringify(se
 
 // --- UI LOGIC ---
 function updateGlobalPurokUI() {
-    document.getElementById('globalPurokDisplay').innerText = currentGlobalPurok;
+    const type = settings.location_config.type;
+    const labelSpan = document.getElementById('globalLabel');
+    const badge = document.getElementById('globalPurokDisplay');
+
+    if(type === 'NONE') {
+        labelSpan.innerText = "LOCATION";
+        badge.innerText = "N/A";
+    } else {
+        labelSpan.innerText = type; // PUROK or SITIO
+        badge.innerText = currentGlobalPurok;
+    }
+    
     localStorage.setItem('globalPurok', currentGlobalPurok);
 }
 
-function openPurokInputModal() {
-    const max = settings.purok_max || 10;
-    showCustomPrompt("SET ACTIVE PUROK", `Enter Purok Number (1-${max}):`, (input) => {
-        if(input && parseInt(input) >= 1 && parseInt(input) <= max && input !== currentGlobalPurok) {
-            showCustomConfirm("CHANGE PUROK?", `This affects NEW entries.\nCurrent: ${currentGlobalPurok} -> New: ${input}`, () => {
-                currentGlobalPurok = input;
-                updateGlobalPurokUI();
-                showToast("Active Purok Updated", "success");
-            });
+// --- NEW LOCATION MODAL LOGIC ---
+function openLocationModal() {
+    tempLocType = settings.location_config.type;
+    tempLocName = settings.location_config.naming;
+    
+    // Set UI State based on current settings
+    selectLocType(tempLocType);
+    selectLocName(tempLocName);
+    
+    // Set current value
+    const input = document.getElementById('loc-input-val');
+    input.value = currentGlobalPurok;
+    
+    if(tempLocType === 'NONE') input.disabled = true;
+    else input.disabled = false;
+
+    document.getElementById('location-settings-modal').style.display = 'flex';
+}
+
+function closeLocationModal() {
+    document.getElementById('location-settings-modal').style.display = 'none';
+}
+
+function selectLocType(type) {
+    tempLocType = type;
+    document.getElementById('opt-type-purok').classList.toggle('selected', type === 'PUROK');
+    document.getElementById('opt-type-sitio').classList.toggle('selected', type === 'SITIO');
+    document.getElementById('opt-type-none').classList.toggle('selected', type === 'NONE');
+
+    const nameGroup = document.getElementById('group-naming');
+    const nameLbl = document.getElementById('lbl-naming');
+    const input = document.getElementById('loc-input-val');
+    const inputLbl = document.getElementById('lbl-input');
+
+    if (type === 'NONE') {
+        nameGroup.style.opacity = '0.5'; nameGroup.style.pointerEvents = 'none';
+        input.disabled = true; input.value = "N/A";
+    } else {
+        nameGroup.style.opacity = '1'; nameGroup.style.pointerEvents = 'all';
+        input.disabled = false;
+        if(input.value === "N/A") input.value = "";
+    }
+}
+
+function selectLocName(nameType) {
+    tempLocName = nameType;
+    document.getElementById('opt-name-num').classList.toggle('selected', nameType === 'NUMBER');
+    document.getElementById('opt-name-txt').classList.toggle('selected', nameType === 'NAME');
+    
+    const input = document.getElementById('loc-input-val');
+    if (tempLocType !== 'NONE') {
+        input.type = (nameType === 'NUMBER') ? 'number' : 'text';
+    }
+}
+
+function saveLocationSettings() {
+    const inputVal = document.getElementById('loc-input-val').value.trim();
+    
+    // Validate Input
+    if (tempLocType !== 'NONE' && !inputVal) {
+        showToast("Please enter a value", "error");
+        return;
+    }
+
+    // CAPTURE OLD STATE
+    const oldContext = currentGlobalPurok;
+    
+    // DETERMINE NEW STATE
+    let newContext = "";
+    if (tempLocType !== 'NONE') {
+        newContext = inputVal.toUpperCase();
+    } else {
+        newContext = "N/A";
+    }
+
+    // CHECK FOR RECORDS TO UPDATE
+    if(oldContext && oldContext !== newContext) {
+        const recordsToUpdate = records.filter(r => r[17] === oldContext).length;
+        
+        if(recordsToUpdate > 0) {
+            closeLocationModal(); // Close first to show confirm clearly
+            showCustomConfirm(
+                "BATCH UPDATE?", 
+                `Found ${recordsToUpdate} records in "${oldContext}".\nMove them to "${newContext}"?`, 
+                () => {
+                    // USER CONFIRMED - EXECUTE UPDATE
+                    applyLocationUpdate(newContext, true, oldContext); 
+                }
+            );
+        } else {
+            applyLocationUpdate(newContext, false, null); // Just update global first
         }
-    });
+    } else {
+        applyLocationUpdate(newContext, false, null);
+    }
+}
+
+function applyLocationUpdate(newContext, isBatch, oldContext) {
+    // 1. Update Global Settings
+    settings.location_config.type = tempLocType;
+    settings.location_config.naming = tempLocName;
+    currentGlobalPurok = newContext;
+    saveSettings();
+    updateGlobalPurokUI();
+
+    // 2. Batch Update if requested
+    if(isBatch && oldContext) {
+        let count = 0;
+        records.forEach(r => {
+            if(r[17] === oldContext) {
+                r[17] = newContext;
+                count++;
+            }
+        });
+        localStorage.setItem('rbiRecords', JSON.stringify(records));
+        showToast(`Updated ${count} records to ${newContext}`, "success");
+        if(currentTab === 'rec') renderList();
+    } else {
+        showToast("Location Context Updated", "success");
+    }
+
+    closeLocationModal();
 }
 
 function loadConfigUI() {
-    const pMax = settings.purok_max || 10;
-    document.getElementById('confPurok').value = pMax;
     const sel = document.getElementById('addressSelect');
     sel.innerHTML = '<option value="">SELECT ADDRESS...</option>';
     (settings.addresses || []).forEach(addr => {
@@ -828,10 +1035,7 @@ function loadConfigUI() {
         list.innerHTML += `<div class="config-item"><span>${addr}</span> <i class="fas fa-trash" style="color:red; cursor:pointer;" onclick="removeAddress(${i})"></i></div>`;
     });
 }
-function savePurokConf() {
-    const val = parseInt(document.getElementById('confPurok').value);
-    if(val > 0) { settings.purok_max = val; saveSettings(); showToast("Purok Limit Updated", "success"); }
-}
+
 function addAddress() {
     const val = document.getElementById('newAddress').value.toUpperCase().trim();
     if(val) {
@@ -870,37 +1074,60 @@ function checkReligion() {
     document.getElementById('religionOther').style.display = (sel.value === 'OTHERS') ? 'block' : 'none';
 }
 
+function checkCitizenship() {
+    const sel = document.getElementById('citizenshipSelect');
+    const input = document.getElementById('citizenshipOther');
+    if(sel.value === 'FOREIGNER') {
+        input.style.display = 'block';
+    } else {
+        input.style.display = 'none';
+    }
+}
+
 function saveRecord(){
-  const idsToCheck = ['lastName', 'firstName', 'birthPlace', 'birthDate', 'citizenship', 'addressSelect'];
+  const idsToCheck = ['lastName', 'firstName', 'birthPlace', 'birthDate', 'addressSelect'];
   for(let id of idsToCheck) {
       if(!document.getElementById(id).value.trim()) { showToast("FIELD REQUIRED: " + id.toUpperCase(), "error"); return; }
   }
+  
+  // RELIGION LOGIC
   let finalReligion = document.getElementById('religionSelect').value;
   if(finalReligion === 'OTHERS') {
       finalReligion = document.getElementById('religionOther').value.toUpperCase();
       if(!finalReligion) { showToast("SPECIFY RELIGION", "error"); return; }
   }
-  let purokToSave = currentGlobalPurok;
-  if(editingIndex > -1) purokToSave = records[editingIndex][17]; 
 
+  // CITIZENSHIP LOGIC
+  let finalCitizenship = document.getElementById('citizenshipSelect').value;
+  if(finalCitizenship === 'FOREIGNER') {
+      finalCitizenship = document.getElementById('citizenshipOther').value.toUpperCase();
+      if(!finalCitizenship) { showToast("SPECIFY NATIONALITY", "error"); return; }
+  }
+  
+  // FIX: ALWAYS USE CURRENT GLOBAL PUROK FOR SAVING (NEW OR EDIT)
+  let purokToSave = currentGlobalPurok;
+  
   const newRow = [
     document.getElementById('inhabitantType').value, document.getElementById('lastName').value.toUpperCase(),
     document.getElementById('firstName').value.toUpperCase(), document.getElementById('middleName').value.toUpperCase(),
     document.getElementById('suffix').value.toUpperCase(), document.getElementById('birthPlace').value.toUpperCase(),
     document.getElementById('birthDate').value, document.getElementById('sex').value, document.getElementById('civilStatus').value,
-    document.getElementById('citizenship').value.toUpperCase(), document.getElementById('profession').value.toUpperCase(), 
+    finalCitizenship, document.getElementById('profession').value.toUpperCase(), 
     document.getElementById('contact').value, "", document.getElementById('education').value,
     document.getElementById('mFirst').value.toUpperCase(), document.getElementById('mMiddle').value.toUpperCase(),
     document.getElementById('mLast').value.toUpperCase(), purokToSave, document.getElementById('addressSelect').value, 
     finalReligion, document.getElementById('isOSY').checked ? "YES" : "NO", document.getElementById('isPWD').checked ? "YES" : "NO",
     document.getElementById('is4Ps').checked ? "YES" : "NO", document.getElementById('isIPS').checked ? "YES" : "NO",
-    document.getElementById('isSolo').checked ? "YES" : "NO"
+    document.getElementById('isSolo').checked ? "YES" : "NO",
+    document.getElementById('laborStatus').value, // NEW
+    document.getElementById('isOFW').checked ? "YES" : "NO", // NEW
+    document.getElementById('isISY').checked ? "YES" : "NO"  // NEW
   ];
 
   if (editingIndex > -1) {
-      records[editingIndex] = newRow; showToast('Record Updated!', "success"); cancelEdit(); 
+      records[editingIndex] = newRow; showToast('Record Updated to ' + purokToSave, "success"); cancelEdit(); 
   } else {
-      records.push(newRow); showToast('Saved to Purok ' + purokToSave, "success");
+      records.push(newRow); showToast(`Saved to ${settings.location_config.type}: ${purokToSave}`, "success");
   }
   localStorage.setItem('rbiRecords', JSON.stringify(records)); updateMotherDatalist();
 
@@ -908,7 +1135,12 @@ function saveRecord(){
       const currType = document.getElementById('inhabitantType').value;
       const currRel = "ROMAN CATHOLIC"; 
       document.querySelectorAll('input').forEach(i => { if(i.type === 'checkbox') i.checked = false; else i.value = ''; });
-      document.getElementById('inhabitantType').value = currType; document.getElementById('citizenship').value = "FILIPINO";
+      document.getElementById('inhabitantType').value = currType; 
+      
+      // RESET CITIZENSHIP
+      document.getElementById('citizenshipSelect').value = "FILIPINO";
+      checkCitizenship();
+
       document.getElementById('religionSelect').value = currRel; document.getElementById('addressSelect').value = "";
       checkReligion(); document.getElementById('lastName').focus();
   }
@@ -920,7 +1152,18 @@ function startEdit(index) {
     document.getElementById('firstName').value = r[2]; document.getElementById('middleName').value = r[3];
     document.getElementById('suffix').value = r[4]; document.getElementById('birthPlace').value = r[5];
     document.getElementById('birthDate').value = r[6]; document.getElementById('sex').value = r[7];
-    document.getElementById('civilStatus').value = r[8]; document.getElementById('citizenship').value = r[9];
+    document.getElementById('civilStatus').value = r[8]; 
+    
+    // CITIZENSHIP HANDLING
+    const citVal = r[9];
+    if(citVal === 'FILIPINO') {
+        document.getElementById('citizenshipSelect').value = 'FILIPINO';
+    } else {
+        document.getElementById('citizenshipSelect').value = 'FOREIGNER';
+        document.getElementById('citizenshipOther').value = citVal;
+    }
+    checkCitizenship();
+
     document.getElementById('profession').value = r[10]; document.getElementById('contact').value = r[11];
     document.getElementById('education').value = r[13]; document.getElementById('mFirst').value = r[14];
     document.getElementById('mMiddle').value = r[15]; document.getElementById('mLast').value = r[16];
@@ -936,12 +1179,27 @@ function startEdit(index) {
     document.getElementById('isOSY').checked = (r[20] === "YES"); document.getElementById('isPWD').checked = (r[21] === "YES");
     document.getElementById('is4Ps').checked = (r[22] === "YES"); document.getElementById('isIPS').checked = (r[23] === "YES");
     document.getElementById('isSolo').checked = (r[24] === "YES");
+    
+    // NEW FIELDS
+    document.getElementById('laborStatus').value = r[25] || "EMPLOYED";
+    document.getElementById('isOFW').checked = (r[26] === "YES");
+    document.getElementById('isISY').checked = (r[27] === "YES");
 
     editingIndex = index;
     document.getElementById('btn-save').innerHTML = '<i class="fas fa-check"></i> UPDATE RECORD';
     document.getElementById('btn-cancel').style.display = "flex";
     document.getElementById('edit-banner').style.display = "block";
-    document.getElementById('edit-purok-indicator').innerText = r[17];
+    
+    // VISUAL INDICATOR
+    const currentLoc = currentGlobalPurok;
+    const recordLoc = r[17];
+    
+    let msg = `Original: ${recordLoc}`;
+    if(recordLoc !== currentLoc) {
+        msg += ` <i class="fas fa-arrow-right"></i> <strong style="color:white; text-decoration:underline;">Saving will move to: ${currentLoc}</strong>`;
+    }
+    document.getElementById('edit-location-msg').innerHTML = msg;
+    
     closeViewer(); switchTab('reg');
 }
 
@@ -950,7 +1208,8 @@ function cancelEdit() {
     document.getElementById('btn-save').innerHTML = '<i class="fas fa-save"></i> SAVE RECORD';
     document.getElementById('btn-cancel').style.display = "none"; document.getElementById('edit-banner').style.display = "none";
     document.querySelectorAll('input').forEach(i => { if(i.type === 'checkbox') i.checked = false; else i.value = ''; });
-    document.getElementById('addressSelect').value = ""; document.getElementById('citizenship').value = "FILIPINO";
+    document.getElementById('addressSelect').value = ""; 
+    document.getElementById('citizenshipSelect').value = "FILIPINO"; checkCitizenship();
     document.getElementById('religionSelect').value = "ROMAN CATHOLIC"; checkReligion();
 }
 
@@ -982,7 +1241,7 @@ function renderList(){
     div.innerHTML = `
         <div style="display:flex; align-items:center; gap:15px;">
             <div style="background:#f1f5f9; padding:10px; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center;">${genderIcon}</div>
-            <div><h5 style="font-size:15px;">${r[1]}, ${r[2]} ${r[4]}</h5><p style="margin-top:2px;">PUROK ${r[17]}</p></div>
+            <div><h5 style="font-size:15px;">${r[1]}, ${r[2]} ${r[4]}</h5><p style="margin-top:2px;">${r[17]}</p></div>
         </div>
         <i class="fas fa-chevron-right" style="color:#cbd5e1; font-size:14px;"></i>
     `;
@@ -1146,7 +1405,7 @@ function autoFillMother(inputObj) {
     if(found) { document.getElementById('mLast').value = found[16]; document.getElementById('mFirst').value = found[14]; document.getElementById('mMiddle').value = found[15]; }
 }
 
-// --- NEW EXPORT LOGIC ---
+// --- UPDATED EXPORT LOGIC: GENERATE -> WAIT -> CHOOSE ---
 function openExportModal() {
     if(records.length === 0){ showToast("No records to export.", "error"); return; }
     document.getElementById('export-options-modal').style.display = 'flex';
@@ -1160,7 +1419,7 @@ function processExport(type) {
     closeExportModal();
     if(type === 'BOTH') {
         exportData('RBIS');
-        setTimeout(() => exportData('BIMS'), 1500); // Delay for second download
+        setTimeout(() => exportData('BIMS'), 1500); 
     } else {
         exportData(type);
     }
@@ -1198,7 +1457,7 @@ function getBIMSInstructions() {
 }
 
 function exportData(format) {
-    showLoading(true, `GENERATING ${format}`, "Preparing Download...");
+    showLoading(true, `GENERATING ${format}`, "Preparing File in Memory...");
     
     setTimeout(() => {
         try {
@@ -1212,77 +1471,92 @@ function exportData(format) {
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(allData), "DATA");
             } 
             else if (format === 'BIMS') {
-                // 1. Static Instructions Sheet
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(getBIMSInstructions()), "INSTRUCTIONS");
-                
-                // 2. Filtered Data Sheet (First 17 columns only)
-                const bimsRecords = records.map(r => r.slice(0, 17)); // Drop cols 17+ (Purok, etc)
+                const bimsRecords = records.map(r => r.slice(0, 17));
                 const allData = [HEADERS_BIMS, ...bimsRecords];
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(allData), "DATA");
             }
 
+            // GENERATE FILE IN MEMORY ONLY
             const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
-            const blob = new Blob([wbout], {type:"application/octet-stream"});
+            const blob = new Blob([wbout], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
             const file = new File([blob], filename, {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
 
-            // Force Download
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url; a.download = filename;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
-
-            // Save for sharing (only saves the last file generated if downloading both)
+            // STORE IN MEMORY
             currentExportFile = file;
 
             showLoading(false);
             
-            // Only show share prompt if single file (to avoid spamming modals on "Both")
-            setTimeout(() => {
-                document.getElementById('share-modal').style.display = 'flex';
-            }, 500);
+            // OPEN DASHBOARD (NO AUTO-DOWNLOAD)
+            document.getElementById('share-modal').style.display = 'flex';
+            
+            // RESET UI STATE
+            const shareBtn = document.getElementById('btn-smart-share');
+            const warnMsg = document.getElementById('protocol-warning');
+            const fallbackInfo = document.getElementById('share-fallback-info');
+            
+            if(shareBtn) shareBtn.style.display = 'flex';
+            if(warnMsg) warnMsg.style.display = 'none';
+            if(fallbackInfo) fallbackInfo.style.display = 'none';
+
+            // CHECK PROTOCOL AND ADJUST UI
+            const isFileProtocol = window.location.protocol === 'file:';
+            if (isFileProtocol) {
+                if(shareBtn) shareBtn.style.display = 'none';
+                if(warnMsg) warnMsg.style.display = 'block';
+            }
 
         } catch (e) {
             showLoading(false);
             showToast("Export Error: " + e.message, "error");
         }
-    }, 200);
+    }, 500);
 }
 
-async function triggerShareAction() {
-    if(!currentExportFile) {
-        showToast("No file to share.", "error");
+// PRIMARY: TRIGGER SYSTEM SHARE WITH AUTO-FALLBACK
+async function triggerSmartAction() {
+    if(!currentExportFile) return;
+
+    // AGGRESSIVE FALLBACK
+    // If browser lacks support OR it's offline (file://)
+    if (!navigator.canShare || !navigator.share || window.location.protocol === 'file:') {
+        downloadDirectly();
+        showToast("Sharing blocked by phone security. File Saved.", "info");
         return;
     }
-    
-    // Explicit Share Data Construction
+
     const shareData = {
         files: [currentExportFile],
         title: 'RBI Export',
-        text: 'Here is the exported RBI Field Data.'
+        text: 'RBI Data File'
     };
 
-    // Robust Share Logic
     try {
-        // Try sharing directly (skipping canShare check which is flaky on some Androids)
         await navigator.share(shareData);
         closeShareModal();
-        showToast("Shared successfully!", "success");
+        showToast("Shared Successfully!", "success");
     } catch (err) {
-        // If that fails, try the check (fallback logic)
-        if (navigator.canShare && navigator.canShare(shareData)) {
-             try {
-                await navigator.share(shareData);
-             } catch (retryErr) {
-                console.log(retryErr);
-             }
-        }
-        
-        console.error("Share failed:", err);
+        console.log("Share failed/cancelled", err);
+        // If it wasn't a user cancellation (AbortError), it was a system block.
         if (err.name !== 'AbortError') {
-            showToast("Share failed. Please share manually from Downloads.", "info");
+            // AUTO-FALLBACK: Download directly
+            downloadDirectly();
+            showToast("Sharing failed. Saving file instead.", "info");
         }
-        closeShareModal();
     }
+}
+
+// SECONDARY: MANUAL DOWNLOAD
+function downloadDirectly() {
+    if(!currentExportFile) return;
+    const url = window.URL.createObjectURL(currentExportFile);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = currentExportFile.name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    closeShareModal();
 }
 
 function closeShareModal() {
